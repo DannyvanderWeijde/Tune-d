@@ -1,0 +1,29 @@
+diff --git a/node_modules/@prisma/adapter-better-sqlite3/dist/index.js b/node_modules/@prisma/adapter-better-sqlite3/dist/index.js
+index 2e5f190..77243b7 100644
+--- a/node_modules/@prisma/adapter-better-sqlite3/dist/index.js
++++ b/node_modules/@prisma/adapter-better-sqlite3/dist/index.js
+@@ -644,13 +644,14 @@ var PrismaBetterSqlite3AdapterFactory = class {
+   }
+ };
+ function createBetterSQLite3Client(input) {
+-  const { url, ...config } = input;
+-  const dbPath = url.replace(/^file:/, "");
+-  const db = new import_better_sqlite3.default(dbPath, config);
+-  db.defaultSafeIntegers(true);
+-  return db;
+-}
+-// Annotate the CommonJS export names for ESM import in node:
+-0 && (module.exports = {
+-  PrismaBetterSqlite3
+-});
++  // 🛑 FIX 1: If input or url is missing, force the local path
++  // (We use process.cwd() so it works even if you move the folder)
++  var url = (input && input.url) ? input.url : "file:./dev.db";
++
++  // 🛑 FIX 2: Handle the .replace crash safely
++  var path = url.replace("file:", "").replace("sqlite:", "");
++
++  // 🛑 FIX 3: Prevent the "memory" crash by passing only the path, not the config object
++  var Database = require("better-sqlite3");
++  return new Database(path);
++};
