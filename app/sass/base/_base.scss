@@ -1,0 +1,17 @@
+@use "../abstract/mixins" as *;
+@use "../abstract/variables" as *;
+
+#__nuxt {
+  height: 100%;
+}
+
+body {
+  background: $bg-color;
+}
+
+button,
+a,
+input,
+textarea {
+  @include focus-outline;
+}

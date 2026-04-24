@@ -1,0 +1,14 @@
+@function rem($pixel) {
+  @if not $pixel {
+    @error "Missing value for rem function";
+  }
+  @return calc($pixel / 16) * 1rem;
+}
+
+/*
+ * Get a color with opacity without using rgba() syntax
+ * Usage: background: color($bg-color, 0.2)
+ */
+@function color($color, $opacity: 1) {
+  @return rgba($color, $opacity);
+}
