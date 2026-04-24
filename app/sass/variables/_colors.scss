@@ -1,0 +1,37 @@
+@use "sass:color";
+
+$c1: #121212;
+$c2: #a3a3a3;
+$c3: #FFFFFF;
+$c4: #2a241d;
+//$c4: #5C5248;
+$c5: #EFDFBB;
+
+:root {
+  --color-1-base:  #{$c1};
+  --color-1-light: #{color.scale($c1, $lightness: 20%)};
+  --color-1-dark:  #{color.scale($c1, $lightness: -20%)};
+
+  --color-2-base:  #{$c2};
+  --color-2-light: #{color.scale($c2, $lightness: 20%)};
+  --color-2-dark:  #{color.scale($c2, $lightness: -20%)};
+
+  --color-3-base:  #{$c3};
+  --color-3-dark:  #{color.scale($c3, $lightness: -20%)};
+
+  --color-4-base:  #{$c4};
+  --color-4-light: #{color.scale($c4, $lightness: 20%)};
+  --color-4-dark:  #{color.scale($c4, $lightness: -20%)};
+
+  --color-5-base:  #{$c5};
+  --color-5-light: #{color.scale($c5, $lightness: 20%)};
+  --color-5-dark:  #{color.scale($c5, $lightness: -20%)};
+}
+
+$bg-color-1: var(--color-4-base);
+$bg-color-1-light: var(--color-4-light);
+$bg-color-1-dark: var(--color-4-dark);
+
+$text-color-1: var(--color-3-base);
+$text-color-1-light: var(--color-3-light);
+$text-color-1-dark:  var(--color-3-dark);

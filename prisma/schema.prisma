@@ -6,13 +6,63 @@ datasource db {
   provider = "sqlite"
 }
 
-model TrackScore {
-  id Int @id @default(autoincrement())
-  userId Int
-  trackId String
-  score Float
-  rankingTime Int
+model User {
+  id        String   @id @default(uuid())
+  spotifyId String   @unique  // <--- This is our main "Link"
+  email     String?
+  name      String?
+  image     String?
+
   createdAt DateTime @default(now())
 
-  @@index([userId, trackId])
+  // Relation: A user has many scores
+  scores    Score[]
+}
+
+model Track {
+  id          String   @id @default(uuid())
+  spotifyId   String   @unique
+
+  // 1. Keep these for easy UI display (so you don't have to join tables just to show a list)
+  name        String
+  albumName   String
+  albumImage  String
+
+  albumSpotifyId String?
+  albumType      String?
+
+  // 2. The Relation: "This track has a list of artists"
+  artists     Artist[]
+
+  // 3. The Scores
+  scores      Score[]
+}
+
+model Artist {
+  id        String   @id @default(uuid())
+  spotifyId String   @unique
+  name      String
+  imageUrl  String?
+
+  // The Relation: "This artist has a list of tracks"
+  tracks    Track[]
+}
+
+model Score {
+  id        String   @id @default(uuid())
+  value     Int?
+  createdAt DateTime @default(now())
+
+  rankInScore Int?
+
+  review      String?  // Allows you to add text later: "Great beat, bad lyrics"
+  isFavorite  Boolean  @default(false) // Allows a simple "Heart" filter later
+
+  // Relation: Link to User
+  // We use spotifyId as the foreign key for simplicity in this specific app
+  userId    String
+  user      User     @relation(fields: [userId], references: [spotifyId])
+
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id])
 }

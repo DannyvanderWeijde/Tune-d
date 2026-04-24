@@ -17,6 +17,7 @@ export interface Album {
   artists: Artist[]
   images: SpotifyImage[]
   release_date?: string
+  album_type: string
 }
 
 export interface TrackItem {

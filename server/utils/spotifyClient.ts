@@ -33,11 +33,11 @@ export const spotifyClient = {
    * Searches for Tracks, Albums, and Artists simultaneously.
    *
    * @param {string} query - The search string.
-   * @param {number} [limit=20] - Number of results per category (default: 20).
+   * @param {number} [limit=15] - Number of results per category (default: 20).
    *
    * @returns {Promise<any>} The search results.
    */
-  async search(query: string, limit = 20) {
+  async search(query: string, limit = 15) {
     return await sdk.search(
       query,
       ['track', 'album', 'artist'],
@@ -61,6 +61,19 @@ export const spotifyClient = {
       sdk.artists.topTracks(id, 'US') // Defaulting to US market for top tracks
     ])
     return { artist, topTracks }
+  },
+
+  /**
+   *
+   * Used when saving scores to get images for all featured artists.
+   *
+   * @param {string[]} ids - Array of Artist IDs (e.g. ['id1', 'id2'])
+   *
+   * @returns {Promise<any>} The artist details.
+   */
+  async getArtists(ids: string[]) {
+    // The SDK is smart: if you pass an array, it hits the batch endpoint
+    return await sdk.artists.get(ids)
   },
 
   /**

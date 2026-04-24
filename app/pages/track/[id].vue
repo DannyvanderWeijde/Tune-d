@@ -67,61 +67,89 @@
 </template>
 
 <script setup lang="ts">
-  import type { TrackItem } from '~/types/spotify'
-  import type { RatingResponse } from '~/types/api'
+import type { TrackItem } from '~/types/spotify'
+import type { ScoreResponse, TrackMetadata, ScoreBody } from '~/types/api'
 
-  const route = useRoute()
-  const trackId = computed(() => route.params.id as string)
+const route = useRoute()
+const trackId = computed(() => route.params.id as string)
 
-  const { data: track, status: trackStatus } = await useFetch<TrackItem>('/api/spotify/track', {
-    query: { id: trackId },
-    immediate: !!trackId.value
-  })
+// TODO: Replace this with real user ID from auth later
+const CURRENT_USER_ID = 'user-1'
 
-  const { data: ratingData } = await useFetch<RatingResponse>('/api/db/score', {
-    query: {
-      userId: 1,
-      trackId: trackId
-    }
-  })
+// 1. Fetch Spotify Data
+const { data: track, status: trackStatus } = await useFetch<TrackItem>('/api/spotify/track', {
+  query: { id: trackId },
+  immediate: !!trackId.value
+})
 
-  const score = ref<number | null>(null)
-  const oldScore = ref<number | null>(null)
-  const isSaving = ref(false)
+// 2. Fetch Existing Score from DB
+const { data: ratingData } = await useFetch<ScoreResponse>('/api/db/score', {
+  query: {
+    spotifyId: trackId,
+    userId: CURRENT_USER_ID // <--- ADDED USER ID HERE
+  },
+  watch: [trackId]
+})
 
-  watch(ratingData, (newVal) => {
-    if (newVal?.score) {
-      score.value = newVal.score
-      oldScore.value = newVal.score
-    }
-  }, { immediate: true })
+const score = ref<number | null>(null)
+const isSaving = ref(false)
 
-  const saveScore = async () => {
-    const val = score.value
-
-    if (!val || val === oldScore.value || val > 10 || val < 1) return
-
-    isSaving.value = true
-    try {
-      await $fetch('/api/db/score', {
-        method: 'POST',
-        body: {
-          userId: 1,
-          trackId: trackId.value,
-          score: val
-        }
-      })
-
-      oldScore.value = val
-    } catch (err) {
-      console.error('Failed to save score', err)
-    } finally {
-      isSaving.value = false
-    }
+// 3. Populate Input if data exists
+watch(ratingData, (newVal) => {
+  if (newVal?.score) {
+    // CONVERSION: DB has 85, UI wants 8.5
+    score.value = newVal.score / 10
   }
+}, { immediate: true })
+
+// 4. Save Logic
+const saveScore = async () => {
+  // Safety check: ensure track data exists before using it
+  if (!track.value || !score.value) return
+
+  // Prevent spamming
+  isSaving.value = true
+
+  try {
+    // Prepare Metadata
+    const metadata: TrackMetadata = {
+      name: track.value.name,
+      // Map ALL artists correctly for the Many-to-Many relation
+      artists: track.value.artists.map(a => ({
+        name: a.name,
+        id: a.id
+      })),
+      albumName: track.value.album.name,
+      albumImage: track.value.album.images[0]?.url || '',
+      albumId: track.value.album.id,
+      albumType: track.value.album.album_type
+    }
+
+    // Prepare Payload
+    // CONVERSION: UI has 8.5, DB wants 85
+    const payload: ScoreBody = {
+      spotifyId: track.value.id,
+      userId: CURRENT_USER_ID, // <--- ADDED USER ID HERE
+      score: Math.round(score.value * 10),
+      trackMetadata: metadata
+    }
+
+    // Send Request
+    await $fetch('/api/db/score', {
+      method: 'POST',
+      body: payload
+    })
+
+  } catch (err) {
+    console.error('Failed to save score', err)
+    // Optional: Add a toast notification here
+  } finally {
+    isSaving.value = false
+  }
+}
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* LAYOUT */
 .page-container {
   display: flex;

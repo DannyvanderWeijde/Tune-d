@@ -48,11 +48,11 @@ export default defineEventHandler(async (event) => {
     return {
       artists: {
         ...results.artists,
-        items: results.artists.items.slice(0, 5)
+        items: results.artists.items.slice(0, 1)
       },
       albums: {
         ...results.albums,
-        items: realAlbums.slice(0, 5)
+        items: realAlbums.slice(0, 1)
       },
       tracks: {
         ...results.tracks,

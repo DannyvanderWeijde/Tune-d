@@ -1,241 +1,218 @@
 <template>
   <div class="page-container">
-    <div v-if="status === 'pending'" class="loading-state">
-      <span class="spinner">Loading Artist...</span>
-    </div>
+    <div v-if="loading" class="loading">Loading Artist...</div>
 
-    <div v-else-if="data" class="artist-content">
+    <div v-else-if="artist" class="content">
 
-      <div class="header">
+      <div class="artist-header">
         <img
-          :src="data.artist.images[0]?.url || '/placeholder.png'"
-          class="artist-img"
-          alt="artist image"
-        >
-        <div class="artist-info">
-          <h1 class="artist-name">{{ data.artist.name }}</h1>
-          <p class="followers">
-            {{ data.artist.followers.total.toLocaleString() }} Followers
-          </p>
-          <div class="genres">
-            <span v-for="g in data.artist.genres" :key="g" class="tag">
-              {{ g }}
-            </span>
-          </div>
+          :src="artist.images?.[0]?.url || '/placeholder.png'"
+          class="artist-image"
+        />
+        <h1 class="artist-name">{{ artist.name }}</h1>
+        <p class="followers">
+          {{ artist.followers?.total?.toLocaleString() || 0 }} Followers
+        </p>
+      </div>
+
+      <div class="stats-card">
+        <div class="stat-box">
+          <span class="stat-label">Your Average</span>
+          <span class="stat-value" :class="getScoreColor(myStats?.average || 0)">
+             {{ myStats?.count ? (myStats.average / 10).toFixed(1) : '-' }}
+          </span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Rated Songs</span>
+          <span class="stat-value">{{ myStats?.count || 0 }}</span>
         </div>
       </div>
 
-      <div class="section">
-        <h2 class="section-title">Popular</h2>
-        <div class="track-list">
-          <TrackItem
-            v-for="(track, index) in data.topTracks.tracks.slice(0, 5)"
+      <hr class="divider" />
+
+      <div v-if="myStats?.tracks?.length" class="rated-list">
+        <h3>Your Ranked Songs</h3>
+        <div class="grid">
+          <NuxtLink
+            v-for="track in myStats.tracks"
             :key="track.id"
-            :track="track"
+            :to="`/track/${track.id}`"
+            class="mini-track-card"
           >
-            <div class="track-row">
-              <span class="track-index">{{ index + 1 }}</span>
-              <img
-                :src="track.album?.images[2]?.url"
-                class="tiny-cover"
-                alt="album image"
-              >
-              <div class="track-info">
-                <span class="track-title">{{ track.name }}</span>
-                <span class="track-meta">
-                  {{ track.album.name }} </span>
-              </div>
-              <span class="track-time">
-                {{ formatDuration(track.duration_ms) }}
-              </span>
+            <div class="score-badge">{{ track.score / 10 }}</div>
+            <img :src="track.image" class="mini-cover" />
+            <div class="mini-info">
+              <span class="mini-name">{{ track.name }}</span>
             </div>
-          </TrackItem>
+          </NuxtLink>
         </div>
       </div>
 
-      <hr class="divider">
+      <div v-else class="empty-state">
+        <p>You haven't rated any songs by {{ artist.name }} yet.</p>
+      </div>
 
-      <div class="section">
-        <div class="discography-header">
-          <h2 class="section-title">Discography</h2>
-          <button
-            v-if="!allTracks"
-            class="load-btn"
-            :disabled="isLoadingTracks"
-            @click="loadAll"
-          >
-            {{ isLoadingTracks ? 'Loading...' : 'Show All Tracks' }}
-          </button>
-        </div>
+      <hr class="divider" />
 
-        <div v-if="allTracks" class="track-list">
-          <TrackItem
-            v-for="track in allTracks"
+      <div class="spotify-list">
+        <h3>Popular on Spotify</h3>
+        <div class="track-list-vertical">
+          <NuxtLink
+            v-for="(track, index) in topTracks"
             :key="track.id"
-            :track="track"
+            :to="`/track/${track.id}`"
+            class="spotify-track-row"
           >
-            <div class="track-row">
-              <img
-                :src="track.album?.images[2]?.url"
-                class="tiny-cover"
-                alt="album image"
-              >
-              <div class="track-info">
-                <span class="track-title">{{ track.name }}</span>
-                <span class="track-meta">
-                  {{ track.album.release_date?.split('-')[0] }} • {{ track.album.name }}
-                </span>
-              </div>
-              <span class="track-time">
-                {{ formatDuration(track.duration_ms) }}
-              </span>
+            <div class="track-index">{{ index + 1 }}</div>
+            <img :src="track.album.images?.[2]?.url || track.album.images?.[0]?.url" class="row-thumb" />
+            <div class="row-info">
+              <span class="row-name">{{ track.name }}</span>
+              <span class="row-album">{{ track.album.name }}</span>
             </div>
-          </TrackItem>
+          </NuxtLink>
         </div>
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import TrackItem from '~/components/TrackItem.vue'
-import { formatDuration } from '~/utils/format'
-import type { ArtistPageResponse, TrackItem as TrackType } from '~/types/spotify'
-
 const route = useRoute()
+const artistId = computed(() => route.params.id as string)
+const CURRENT_USER = 'user-1'
 
-// 1. Initial Data (Artist Profile + Top 5 Tracks)
-const { data, status } = await useFetch<ArtistPageResponse>('/api/spotify/artist', {
-  query: { id: route.params.id }
+// 1. Fetch Spotify Data (Artist + Top Tracks)
+const { data: artistResponse, pending: loading } = await useFetch(`/api/spotify/artist`, {
+  query: { id: artistId }
 })
 
-// 2. Lazy Data (Discography)
-// We type this as TrackType[] so we get autocomplete
-const allTracks = ref<TrackType[] | null>(null)
-const isLoadingTracks = ref(false)
+// Extract Artist Profile
+const artist = computed(() => artistResponse.value?.artist)
 
-const loadAll = async () => {
-  isLoadingTracks.value = true
-  try {
-    allTracks.value = await $fetch<TrackType[]>('/api/spotify/artist-tracks', {
-      query: { id: route.params.id }
-    })
-  } catch (e) {
-    console.error(e)
-  } finally {
-    isLoadingTracks.value = false
+// Extract Top Tracks (The new part!)
+// The SDK returns { tracks: [...] } so we access .tracks
+const topTracks = computed(() => artistResponse.value?.topTracks?.tracks || [])
+
+// 2. Fetch Your Custom Stats from DB
+const { data: myStats } = await useFetch('/api/db/artist-stats', {
+  query: {
+    artistId: artistId,
+    userId: CURRENT_USER
   }
+})
+
+function getScoreColor(val: number) {
+  if (val >= 80) return 'text-green'
+  if (val >= 50) return 'text-yellow'
+  return 'text-red'
 }
 </script>
 
-<style scoped>
-/* LAYOUT */
+<style lang="scss" scoped>
 .page-container {
   padding: 40px 20px;
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
-}
-.loading-state {
-  display: flex;
-  justify-content: center;
-  padding-top: 100px;
-  color: #1db954;
+  color: white;
+  text-align: center;
 }
 
-/* HEADER */
-.header {
-  display: flex;
-  align-items: flex-end;
-  gap: 32px;
-  margin-bottom: 48px;
-}
-.artist-img {
-  width: 240px;
-  height: 240px;
+/* HEADER & STATS (Same as before) */
+.artist-image {
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  margin-bottom: 20px;
 }
-.artist-name {
-  font-size: 4.5rem; /* Massive, Spotify-style title */
-  font-weight: 900;
-  margin: 0 0 16px 0;
-  line-height: 1;
-}
-.followers {
-  color: #fff;
-  font-size: 1rem;
-  margin-bottom: 16px;
-}
-.genres {
+.artist-name { font-size: 3rem; font-weight: 800; margin: 0; }
+.followers { color: #888; margin-top: 5px; }
+
+.stats-card {
   display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 30px;
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 16px;
+}
+.stat-box { display: flex; flex-direction: column; }
+.stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+.stat-value { font-size: 2.5rem; font-weight: 900; }
+.text-green { color: #1db954; }
+.text-yellow { color: #f5b041; }
+.text-red { color: #e74c3c; }
+
+.divider {
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 40px 0;
+}
+
+/* GRID FOR YOUR RATED SONGS */
+.rated-list h3, .spotify-list h3 { text-align: left; margin-bottom: 20px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 20px;
+}
+.mini-track-card {
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+  position: relative;
+  transition: transform 0.2s;
+  &:hover { transform: translateY(-5px); background: rgba(255,255,255,0.1); }
+}
+.mini-cover { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
+.mini-info { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score-badge {
+  position: absolute; top: 5px; right: 5px; background: #1db954; color: black;
+  font-weight: bold; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px;
+}
+
+.empty-state { color: #666; margin-top: 40px; }
+
+/* NEW: SPOTIFY LIST STYLES */
+.track-list-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
 }
-.tag {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px 16px;
-  border-radius: 100px;
-  font-size: 0.85rem;
-  text-transform: capitalize;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-/* SECTIONS */
-.section { margin-bottom: 40px; }
-.section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; }
-.divider { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 40px 0; }
-
-/* TRACK ROWS (Replaces song-item) */
-.track-list { display: flex; flex-direction: column; }
-
-.track-row {
+.spotify-track-row {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  border-radius: 4px;
-  gap: 16px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
   transition: background 0.2s;
-}
-.track-row:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
+  text-align: left;
 
-.tiny-cover {
+  &:hover { background: rgba(255,255,255,0.1); }
+}
+.track-index {
+  width: 30px;
+  color: #888;
+  font-weight: bold;
+}
+.row-thumb {
   width: 40px;
   height: 40px;
   border-radius: 4px;
+  margin-right: 16px;
+  object-fit: cover;
 }
-.track-index {
-  color: #b3b3b3;
-  width: 20px;
-  text-align: center;
-}
-.track-info {
+.row-info {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Pushes time to the right */
 }
-.track-title { font-size: 1rem; color: white; }
-.track-meta { font-size: 0.85rem; color: #b3b3b3; }
-.track-time { font-size: 0.9rem; color: #b3b3b3; font-variant-numeric: tabular-nums; }
-
-/* BUTTONS */
-.discography-header { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
-.load-btn {
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.3);
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.load-btn:hover:not(:disabled) {
-  border-color: white;
-  transform: scale(1.05);
-}
+.row-name { font-weight: 600; font-size: 0.95rem; }
+.row-album { font-size: 0.8rem; color: #aaa; }
 </style>

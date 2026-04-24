@@ -1,94 +1,75 @@
 <template>
-  <div>
-    <div class="search-container">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="What do you want to listen to?"
-        class="search-bar"
-      >
-      <div v-if="pending" class="spinner">Loading...</div>
-    </div>
+  <section class="search-bar">
+    <input
+      v-model="searchQuery"
+      type="text"
+      placeholder="What do you want to listen to?"
+      class="search-bar__input"
+    >
 
-    <div v-if="searchResults" class="results-grid">
-
-      <div v-if="searchResults.artists?.items?.length" class="artists-section">
-        <h2>Artists</h2>
-        <ul>
-          <NuxtLink
-            v-for="artist in searchResults.artists.items"
-            :key="artist.id"
-            :to="`/artist/${artist.id}`"
+    <div v-if="searchResults" class="search-bar__results">
+      <div>
+        <h2 class="search-bar__title">Artist</h2>
+        <NuxtLink
+          :key="artist.id"
+          class="search-bar__link"
+          :to="`/artist/${artist.id}`"
+          @click="searchQuery = ''"
+        >
+          <img
+            v-if="artist.images?.[2]?.url"
+            :src="artist.images[2].url"
+            class="search-bar__image --artist"
+            alt="artist image"
           >
-            <li class="artist-item">
-              <img
-                v-if="artist.images?.[2]?.url"
-                :src="artist.images[2].url"
-                class="tiny-cover"
-                alt="artist image"
-              >
-              <div class="artist-details">
-                <span class="artist-name">{{ artist.name }}</span>
-              </div>
-            </li>
-          </NuxtLink>
-        </ul>
+          <span class="search-bar__name --artist">{{ artist.name }}</span>
+        </NuxtLink>
       </div>
 
-      <div v-if="searchResults.albums?.items?.length" class="albums-section">
-        <h2>Albums</h2>
-        <ul>
-          <NuxtLink
-            v-for="album in searchResults.albums.items"
-            :key="album.id"
-            :to="`/album/${album.id}`"
+      <div>
+        <h2 class="search-bar__title">Album</h2>
+        <NuxtLink
+          :key="album.id"
+          class="search-bar__link"
+          :to="`/album/${album.id}`"
+          @click="searchQuery = ''"
+        >
+          <img
+            v-if="album.images?.[2]?.url"
+            :src="album.images[2].url"
+            class="search-bar__image"
+            alt="album image"
           >
-            <li class="album-item">
-              <img
-                v-if="album.images?.[2]?.url"
-                :src="album.images[2].url"
-                class="tiny-cover"
-                alt="album image"
-              >
-              <div class="album-details">
-                <span class="album-title">{{ album.name }}</span>
-                <span class="album-artist">{{ album.artists[0]?.name }}</span>
-              </div>
-            </li>
-          </NuxtLink>
-        </ul>
+          <span class="search-bar__name">{{ album.name }}</span>
+        </NuxtLink>
       </div>
 
-      <div v-if="searchResults.tracks?.items?.length" class="songs-section">
-        <h2>Tracks</h2>
-        <ul>
-          <TrackItem
+      <div>
+        <h2 class="search-bar__title">Tracks</h2>
+        <ul class="search-bar__list">
+          <li
             v-for="track in searchResults.tracks.items"
             :key="track.id"
-            :track="track"
           >
-            <li class="song-item">
+            <TrackItem
+              :key="track.id"
+              class="search-bar__link"
+              :track="track"
+              @click="searchQuery = ''"
+            >
               <img
-                v-if="track.album?.images?.[2]?.url"
+                v-if="track.album.images?.[2]?.url"
                 :src="track.album.images[2].url"
-                class="tiny-cover"
+                class="search-bar__image"
                 alt="track image"
               >
-              <div class="song-details">
-                <span class="song-title">{{ track.name }}</span>
-                <span> - </span>
-                <span class="song-artist">{{ track.artists[0]?.name }}</span>
-                <span> - </span>
-                <span class="song-length">
-                  {{ new Date(track.duration_ms).toISOString().slice(14, 19) }}
-                </span>
-              </div>
-            </li>
-          </TrackItem>
+              <span class="search-bar__name">{{ track.name }}</span>
+            </TrackItem>
+          </li>
         </ul>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -116,38 +97,62 @@
   watch(searchQuery, (newVal) => {
     updateDebouncedQuery(newVal)
   })
+
+  const artist = computed(() => {
+    return searchResults.value?.artists?.items[0]
+  })
+
+  const album = computed(() => {
+    return searchResults.value?.albums?.items[0]
+  })
 </script>
 
-<style scoped>
-/* Your existing styles work great */
-.results-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 20px;
-}
-.tiny-cover {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-.song-item, .artist-item, .album-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  list-style: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.song-item:hover, .artist-item:hover, .album-item:hover {
-  background: #2a2a2a;
-}
-.spinner {
-  margin-top: 10px;
-  color: #1db954;
-  font-size: 0.9rem;
-}
-a { text-decoration: none; color: inherit; }
+<style lang="scss" scoped>
+  .search-bar {
+    position: relative;
+
+    &__results {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 50vw;
+      max-width: 600px;
+      background: var(--color-1-base);
+      max-height: 50vh;
+      overflow: auto;
+    }
+
+    &__container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &__link {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+    }
+
+    &__image {
+      width: 64px;
+      height: 64px;
+    }
+
+    &__title {
+      color: #fff;
+      margin-bottom: 12px;
+    }
+  }
 </style>
