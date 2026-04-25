@@ -1,34 +1,74 @@
 @use "sass:color";
+@use "sass:map";
 
-$black: #1A181B;
-$white: #ffffff;
-$gold: #D8C293;
+$black: #1a181b;
+$white: #fff;
+$gold: #d8c293;
+
+$black-shades: (
+    "lightest": color.adjust($black, $lightness: 20%),
+    "lighter": color.adjust($black, $lightness: 10%),
+    "default": $black,
+    "darker": color.adjust($black, $lightness: -10%),
+    "darkest": color.adjust($black, $lightness: -20%)
+);
+
+$white-shades: (
+    "lightest": color.adjust($white, $lightness: -20%),
+    "lighter": color.adjust($white, $lightness: -10%),
+    "default": $white,
+    "darker": color.adjust($white, $lightness: 10%),
+    "darkest": color.adjust($white, $lightness: 20%)
+);
+
+$gold-shades: (
+    "lightest": color.adjust($gold, $lightness: 20%),
+    "lighter": color.adjust($gold, $lightness: 10%),
+    "default": $gold,
+    "darker": color.adjust($gold, $lightness: -10%),
+    "darkest": color.adjust($gold, $lightness: -20%)
+);
 
 :root {
-  --bg-color: #{$black};
-  --black-color: #{$black};
-  --gold-color: #{$gold};
-  --text-color: #{$white};
-  --white-color: #{$white};
-  --black-color-dark: color.adjust($black, $lightness: -10%);
-  --gold-color-dark: color.adjust($gold, $lightness: -10%);
-  --white-color-dark: color.adjust($white, $lightness: -10%);
-  --black-color-light: color.adjust($black, $lightness: 10%);
-  --gold-color-light: color.adjust($gold, $lightness: 10%);
-  --white-color-light: color.adjust($white, $lightness: 10%);
+    --bg-color: #{map.get($black-shades, "default")};
+    --black-color: #{map.get($black-shades, "default")};
+    --gold-color: #{map.get($gold-shades, "default")};
+    --text-color: #{map.get($white-shades, "default")};
+    --white-color: #{map.get($white-shades, "default")};
+
+    --black-color-darker: #{map.get($black-shades, "darker")};
+    --gold-color-darker: #{map.get($gold-shades, "darker")};
+    --white-color-darker: #{map.get($white-shades, "darker")};
+    --black-color-darkest: #{map.get($black-shades, "darkest")};
+
+    --gold-color-darkest: #{map.get($gold-shades, "darkest")};
+    --white-color-darkest: #{map.get($white-shades, "darkest")};
+    --black-color-lighter: #{map.get($black-shades, "lighter")};
+    --gold-color-lighter: #{map.get($gold-shades, "lighter")};
+
+    --white-color-lighter: #{map.get($white-shades, "lighter")};
+    --black-color-lightest: #{map.get($black-shades, "lightest")};
+    --gold-color-lightest: #{map.get($gold-shades, "lightest")};
+    --white-color-lightest: #{map.get($white-shades, "lightest")};
 }
 
 $text-color: var(--text-color);
 $bg-color: var(--bg-color);
 
 $gold-color: var(--gold-color);
-$gold-color-dark: var(--gold-color-dark);
-$gold-color-light: var(--gold-color-light);
+$gold-color-lightest: var(--gold-color-lightest);
+$gold-color-lighter: var(--gold-color-lighter);
+$gold-color-darker: var(--gold-color-darker);
+$gold-color-darkest: var(--gold-color-darkest);
 
 $white-color: var(--white-color);
-$white-color-dark: var(--white-color-dark);
-$white-color-light: var(--white-color-light);
+$white-color-lightest: var(--white-color-lightest);
+$white-color-lighter: var(--white-color-lighter);
+$white-color-darker: var(--white-color-darker);
+$white-color-darkest: var(--white-color-darkest);
 
 $black-color: var(--black-color);
-$black-color-dark: var(--black-color-dark);
-$black-color-light: var(--black-color-light);
+$black-color-lightest: var(--black-color-lightest);
+$black-color-lighter: var(--black-color-lighter);
+$black-color-darker: var(--black-color-darker);
+$black-color-darkest: var(--black-color-darkest);

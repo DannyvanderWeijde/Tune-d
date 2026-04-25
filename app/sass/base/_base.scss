@@ -2,16 +2,18 @@
 @use "../abstract/variables" as *;
 
 #__nuxt {
-  height: 100%;
+    height: 100%;
 }
 
 body {
-  background: $bg-color;
+    background: $bg-color;
 }
 
 button,
 a,
 input,
 textarea {
-  @include focus-outline;
+    color: $text-color;
+
+    @include focus-outline;
 }

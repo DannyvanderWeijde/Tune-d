@@ -3,6 +3,7 @@
 </script>
 
 <template>
-  <NuxtRouteAnnouncer />
-  <h1>Hello World</h1>
+  <NuxtLayout>
+    <h1>Hello World</h1>
+  </NuxtLayout>
 </template>

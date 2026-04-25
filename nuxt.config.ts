@@ -11,7 +11,11 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "${resolve(process.cwd(), 'app/sass/abstract/_variables.scss').replace(/\\/g, '/')}" as *;`
+          additionalData: `
+            @use "@/sass/abstract/_variables.scss" as *;
+            @use "@/sass/abstract/_functions.scss" as *;
+            @use "@/sass/abstract/_mixins.scss" as *;
+          `
         }
       }
     }
