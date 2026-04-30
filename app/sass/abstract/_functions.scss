@@ -9,7 +9,7 @@
  * Get a color with opacity without using rgba() syntax
  * Usage: background: color($bg-color, 0.2)
  */
-@function clr($color, $opacity: 1) {
+@function color($color, $opacity: 1) {
     $percentage: $opacity * 100%;
     @return color-mix(in srgb, $color, transparent calc(100% - #{$percentage}));
 }

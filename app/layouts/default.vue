@@ -1,20 +1,29 @@
 <script lang="ts" setup>
-
+function handleSearch (value) {
+	console.log(value)
+}
 </script>
 
 <template>
-  <nav class="nav">
-    <AppSearchbar/>
-    <NuxtLink to="/">Home</NuxtLink>
-  </nav>
+	<header class="header">
+		<AppNav/>
 
-  <main class="main">
-    <slot/>
-  </main>
+		<AppSearchbar @search="handleSearch($event)"/>
+
+		<div>
+			Profile
+		</div>
+	</header>
+
+	<main class="main">
+		<slot/>
+	</main>
 </template>
 
 <style lang="scss" scoped>
-.nav {
-  padding: 10px 16px;
+.header {
+	padding: 20px 26px;
+
+	@include flex-center(row, space-between);
 }
 </style>
